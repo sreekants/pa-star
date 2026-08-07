@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 from util2 import Graph
-import heapq, sys, math, timeit
+import heapq, sys, math
 
 
 # You should only need to use the following functions to implement A*:
@@ -15,24 +15,30 @@ import heapq, sys, math, timeit
 # graph.add_visited_node(node) # Use this when you are visiting a new node to update the visualization
 # graph.add_shortest_path(path) # Use this to visualize the shortest path after you have found it.
 
-def distance(start, end):
-    return math.sqrt( (start[0]-end[0])**2+ (start[1]-end[1])**2 )    
+def euclidean(start, end):
+    return math.sqrt( (start[0]-end[0])**2+ (start[1]-end[1])**2 )
 
 def manhattan(start, end):
     return abs(start[0]-end[0])+ abs(start[1]-end[1])
 
 def H(graph, n, goal):
-    # Manhattan distance to the end goal.
-    return distance( n, goal )
+    # distance to the end goal.
+    return euclidean( n, goal )
 
 def D(graph, start, end):
-    return distance(start, end)
+    return euclidean(start, end)
 
-def a_star(graph:Graph, weight=1.0, heuristic_function=None):
+def a_star(graph:Graph, weight=1.0, heuristic_function=None, dist_hint=None):
     # A* search. With weight=1.0 this is standard (optimal) A*; with weight>1.0 it
     # becomes Weighted A*, which is faster but only guarantees a path within
     # `weight` times the optimal cost. Returns the path from start to goal as a
     # sequential list of nodes.
+    #
+    # dist_hint, if given, is a {node: (g, predecessor)} map used to bootstrap
+    # `dist` and seed the frontier -- e.g. from a coarser level's solution --
+    # so the search doesn't have to rediscover distances along a corridor we
+    # already have a good estimate for. Every entry must already be a real,
+    # connected, admissible (g, predecessor) pair reachable from `start`.
 
     start = tuple(graph.get_start_node())
     dest = tuple(graph.get_goal_node())
@@ -47,6 +53,14 @@ def a_star(graph:Graph, weight=1.0, heuristic_function=None):
     # Track a priority queue to pick the shortest next step
     frontier = [(0, start)]
 
+    if dist_hint:
+        for node, (g, pred) in dist_hint.items():
+            if node == start:
+                continue
+            dist[node] = (g, pred)
+            h = heuristic(graph, node, dest)
+            heapq.heappush(frontier, (g + weight*h, node))
+
     current = start
     graph.add_visited_node(start)
 
@@ -55,25 +69,21 @@ def a_star(graph:Graph, weight=1.0, heuristic_function=None):
 
         if current == dest:
             break
-        
+
         currdist    = dist[current][0]
         neighbours  = graph.get_neighbors(current)
-        for next in neighbours: 
+        for next in neighbours:
             graph.add_visited_node(next)
             g       = currdist + D(graph, current, next)
 
             if g < dist[next][0]:
-                
+
                 dist[next] = (g,current)
-                
+
                 h       = heuristic(graph, next, dest)
                 f       = g + weight*h
-                
-                heapq.heappush( frontier, (f, next) )
 
-                if next == dest:
-                    frontier.clear()
-                    break
+                heapq.heappush( frontier, (f, next) )
 
                 #print( f'({current[1]},{4-current[0]}) ({next[1]},{4-next[0]}) : F={f:.1f} G={g:.1f} H={h:.1f}' )
 
@@ -96,7 +106,7 @@ def a_star(graph:Graph, weight=1.0, heuristic_function=None):
 
 def path_cost(path):
     # Geometric (Euclidean) length of a path given as a list of (i,j) nodes.
-    return sum(distance(path[i], path[i+1]) for i in range(len(path) - 1))
+    return sum(euclidean(path[i], path[i+1]) for i in range(len(path) - 1))
 
 if __name__ == "__main__":
     graph = Graph(sys.argv[1])

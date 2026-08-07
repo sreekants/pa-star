@@ -3,7 +3,7 @@
 import os, sys, time
 from pool import process_image
 from a_star import a_star, path_cost
-from pa_star import pa_star
+from pa_star import pa_star, pa_ctxt
 from dijkstra import dijkstra
 from ara_star import ara_star, WEIGHT_SCHEDULE
 from jps import jps
@@ -29,7 +29,7 @@ COLUMNS = [
     "jps_t", "jps_found", "jps_cost",
     "ara_first_t", "ara_first_cost", "ara_final_t", "ara_final_cost", "ara_found",
     "hpa_build_t", "hpa_query_t", "hpa_found", "hpa_cost",
-    "pastar_speedup",
+    "speedup","first_time","first_cost","first_speedup","fit"
 ]
 
 def header():
@@ -106,6 +106,23 @@ def eval_planner(ret, name, planner, graph):
     ret.cost[name]  = cost
 
 
+def eval_planner_timed(ret, name, planner, graph):
+    # Time a planner and record whether it found a path and the path's length.
+    # `scale` rescales the reported cost (used to lift Progressive A*'s coarse-grid
+    # length back to full resolution).
+    found, cost = False, None
+    t0 = time.perf_counter()
+    if graph is not None:
+        path = planner(graph, t0)        
+        if path is not None:
+            found, cost = True, path_cost(path)
+        else:
+            found, cost = False, None
+            
+    ret.time[name]  = time.perf_counter() - t0
+    ret.found[name] = found
+    ret.cost[name]  = cost
+
 def eval_ara(ret, graph):
     # ARA* yields improving solutions as the weight decreases to 1.0. Record the
     # first (fast, weight-suboptimal) and the last (optimal) with their arrival times.
@@ -157,17 +174,30 @@ def run_program(root, file, orig, conv):
     full, to   = build_graph(orig)   # full-resolution grid (all planners except Progressive A*)
     coarse, tc = build_graph(conv)   # pooled grid (Progressive A*)
 
-    
+    ctxt    = pa_ctxt([[full, 1.0,None], [coarse, TILE_SIZE, None]])
+
+    eval_planner_timed(ret, "pastar",   pa_star,  ctxt)
+
     eval_planner(ret, "dijkstra", dijkstra, full)
     eval_planner(ret, "astar",    a_star,   full)
-    eval_planner(ret, "pastar",   pa_star,  [(full, 1.0), (coarse, TILE_SIZE)])
     eval_planner(ret, "wastar",   lambda g: a_star(g, weight=WEIGHT), full)
     eval_planner(ret, "jps",      jps,      full)
     eval_ara(ret, full)
     eval_hpa(ret, full)
 
-    denom   = ret.time["pastar"] +tc
-    speedup = ret.time["astar"] / denom if denom > 0 else 0.0
+    astar       = ret.time["astar"]
+    astarcost   = ret.cost["astar"]
+    denom       = ret.time["pastar"]+tc
+    speedup     = astar / denom if denom > 0 else 0.0
+    first_time  = ctxt.firsttime
+    first_cost  = ctxt.firstcost
+    first_speedup   = None
+    fit         = '0.0'
+
+    if ctxt.firsttime is not None:
+        denom   = ctxt.firsttime+tc
+        first_speedup = astar / denom if denom > 0 else 0.0
+        fit     = 100.0*float(first_cost-astarcost)/float(astarcost)
 
     row = [
         root, file,
@@ -179,7 +209,7 @@ def run_program(root, file, orig, conv):
         _fmt(ret.time["jps"]),      _fmt(ret.found["jps"]),      _fmt(ret.cost["jps"]),
         _fmt(ret.ara_first_t), _fmt(ret.ara_first_cost), _fmt(ret.ara_final_t), _fmt(ret.ara_final_cost), _fmt(ret.found["ara"]),
         _fmt(ret.hpa_build_t), _fmt(ret.hpa_query_t), _fmt(ret.found["hpa"]), _fmt(ret.cost["hpa"]),
-        _fmt(speedup),
+        _fmt(speedup),_fmt(first_time), _fmt(first_cost), _fmt(first_speedup), _fmt(fit) 
     ]
     assert len(row) == len(COLUMNS), f"row has {len(row)} fields, expected {len(COLUMNS)}"
     print(",".join(row))
