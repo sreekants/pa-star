@@ -172,12 +172,12 @@ def run_program(root, file, orig, conv):
     row = [
         root, file,
         _fmt(ret.density), _fmt(ret.opacity[0]), _fmt(ret.opacity[1]), _fmt(ret.preprocess_t),
-        'dj+'+_fmt(ret.time["dijkstra"]), _fmt(ret.found["dijkstra"]), _fmt(ret.cost["dijkstra"]),
-        'a*+'+_fmt(ret.time["astar"]),    _fmt(ret.found["astar"]),    _fmt(ret.cost["astar"]),
-        'pa+'+_fmt(ret.time["pastar"]+tc),   _fmt(ret.found["pastar"]),   _fmt(ret.cost["pastar"]),
-        'wa+'+_fmt(ret.time["wastar"]),   _fmt(ret.found["wastar"]),   _fmt(ret.cost["wastar"]),
-        'jp+'+_fmt(ret.time["jps"]),      _fmt(ret.found["jps"]),      _fmt(ret.cost["jps"]),
-        'ar+'+_fmt(ret.ara_first_t), _fmt(ret.ara_first_cost), _fmt(ret.ara_final_t), _fmt(ret.ara_final_cost), _fmt(ret.found["ara"]),
+        _fmt(ret.time["dijkstra"]), _fmt(ret.found["dijkstra"]), _fmt(ret.cost["dijkstra"]),
+        _fmt(ret.time["astar"]),    _fmt(ret.found["astar"]),    _fmt(ret.cost["astar"]),
+        _fmt(ret.time["pastar"]+tc),   _fmt(ret.found["pastar"]),   _fmt(ret.cost["pastar"]),
+        _fmt(ret.time["wastar"]),   _fmt(ret.found["wastar"]),   _fmt(ret.cost["wastar"]),
+        _fmt(ret.time["jps"]),      _fmt(ret.found["jps"]),      _fmt(ret.cost["jps"]),
+        _fmt(ret.ara_first_t), _fmt(ret.ara_first_cost), _fmt(ret.ara_final_t), _fmt(ret.ara_final_cost), _fmt(ret.found["ara"]),
         _fmt(ret.hpa_build_t), _fmt(ret.hpa_query_t), _fmt(ret.found["hpa"]), _fmt(ret.cost["hpa"]),
         _fmt(speedup),
     ]

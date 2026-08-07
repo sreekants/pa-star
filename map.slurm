@@ -20,4 +20,4 @@ fi
 
 python app/map.py --header
 
-srun --ntasks=7 --multi-prog ./file.small.conf
+srun --ntasks=8 --multi-prog ./file.conf
