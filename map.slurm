@@ -1,10 +1,11 @@
 #!/bin/bash
 
 #SBATCH --job-name=8123-perfrun
-#SBATCH --time=04:00:00
+#SBATCH --time=08:00:00
 #SBATCH --partition=CPUQ
 #SBATCH --account=share-ie-idi
-#SBATCH --nodes=3
+#SBATCH --nodes=4
+#SBATCH --ntasks-per-node=2
 #SBATCH --cpus-per-task=1
 #SBATCH --output=perfrun_map_%j.log
 
@@ -20,4 +21,4 @@ fi
 
 python app/map.py --header
 
-srun --ntasks=8 --multi-prog ./file.conf
+srun --ntasks=8 --wait=0 --multi-prog ./file.conf

@@ -50,6 +50,17 @@ def create_db(dbfile, model, table):
     rec.execute_sql( '\n'.join(strsql) )
     return headers
 
+# NOTE:  Start by running your slurm script. As an output, Slurm dumps 
+# a file You should have a file with the name 'perfrun_map_[JobID].log' 
+# in your folder you run Slum from eg:perfrun_map_25200388.log is the 
+# output of the job with the id 25200388. The file is infact a CSV output
+# of the performance metrics of your run. This program generates an SQLite 
+# database to simplify querying the database for insights. To use this program, 
+# you do the following steps:
+#   (1) Rename the slurm output to alltests.log and move it to the logs folder
+#   (2) Run this script and expect its output as 'alltest.s3db' in the current folder
+#   (3) Run the command 'sqlite3 alltest.s3db' to use the command line 
+#       utility against the data
 
 case = 'alltests'
 dbfile  = f'{case}.s3db'
