@@ -1,6 +1,6 @@
 #!/usr/bin/python
 from util import Graph
-import heapq, sys
+import heapq, sys, math
 
 # You should only need to use the following functions to implement dijkstra:
 # Graph(path_to_map) # path_to_map can, for instance, be 'maps/map1.png'
@@ -14,8 +14,10 @@ import heapq, sys
 # graph.add_shortest_path(path) # Use this to visualize the shortest path after you have found it.
 
 def g(graph, start, end):
-    # Will always be 1 if we move one cell at a time    
-    return max( abs(start[0]-end[0]), abs(start[1]-end[1]) )    
+    # Euclidean step cost between adjacent cells: 1 for orthogonal moves,
+    # sqrt(2) for diagonal moves -- matches the edge-cost metric used by
+    # A*, PA*, and path_cost(), so Dijkstra optimizes the same objective.
+    return math.hypot(start[0]-end[0], start[1]-end[1])
 
 def f(graph, start, end):
     return g(graph, start,end)    
@@ -43,18 +45,20 @@ def dijkstra(graph):
     while len(pq):
         currdist, current = heapq.heappop(pq)
 
+        # Stop only when the goal is POPPED: its distance label is final at
+        # that point. Breaking when dest is first relaxed (pushed) could lock
+        # in a non-optimal route before a cheaper one is dequeued.
+        if current == dest:
+            break
+
         if currdist > dist[current][0]:
             continue
-        
-        for next in graph.get_neighbors(current): 
+
+        for next in graph.get_neighbors(current):
             graph.add_visited_node(next)
             newdist = currdist + f(graph, current, next)
             if newdist < dist[next][0]:
                 dist[next] = (newdist,current)
-                if next == dest:
-                    pq.clear()
-                    break
-
                 heapq.heappush( pq, (newdist, next) )
 
 
