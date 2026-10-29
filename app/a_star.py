@@ -50,8 +50,10 @@ def a_star(graph:Graph, weight=1.0, heuristic_function=None, dist_hint=None):
     dist = {v: (float('infinity'),None) for v in vertices}
     dist[start] = (0, None)
 
-    # Track a priority queue to pick the shortest next step
-    frontier = [(0, start)]
+    # Track a priority queue to pick the shortest next step. Entries carry the g
+    # they were pushed with, so stale ones (superseded by a cheaper path) can be
+    # recognised and skipped when popped.
+    frontier = [(0, 0, start)]
 
     if dist_hint:
         for node, (g, pred) in dist_hint.items():
@@ -59,18 +61,22 @@ def a_star(graph:Graph, weight=1.0, heuristic_function=None, dist_hint=None):
                 continue
             dist[node] = (g, pred)
             h = heuristic(graph, node, dest)
-            heapq.heappush(frontier, (g + weight*h, node))
+            heapq.heappush(frontier, (g + weight*h, g, node))
 
     current = start
     graph.add_visited_node(start)
 
     while len(frontier):
-        currf, current = heapq.heappop(frontier)
+        currf, currg, current = heapq.heappop(frontier)
 
         if current == dest:
             break
 
-        currdist    = dist[current][0]
+        # Skip stale entries: a cheaper path to this node was pushed later.
+        if currg > dist[current][0]:
+            continue
+
+        currdist    = currg
         neighbours  = graph.get_neighbors(current)
         for next in neighbours:
             graph.add_visited_node(next)
@@ -83,7 +89,7 @@ def a_star(graph:Graph, weight=1.0, heuristic_function=None, dist_hint=None):
                 h       = heuristic(graph, next, dest)
                 f       = g + weight*h
 
-                heapq.heappush( frontier, (f, next) )
+                heapq.heappush( frontier, (f, g, next) )
 
                 #print( f'({current[1]},{4-current[0]}) ({next[1]},{4-next[0]}) : F={f:.1f} G={g:.1f} H={h:.1f}' )
 
